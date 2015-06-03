@@ -208,9 +208,6 @@ Class CTPIIf
 			vNode.AppendTagError "value_id|true_id|false_id"
 			Exit Sub
 		End If
-		If Not CBool(vNode.EvalParamString(vNode.ParamItem(1))) Then
-			Exit Sub
-		End If
 		vNode.StackPush
 		If CBool(vNode.EvalParamString(vNode.ParamItem(1))) Then
 			vNode.Engine.ContentAppend vNode.EvalParamString(vNode.ParamItem(2))
@@ -829,7 +826,7 @@ Class CTemplateEngine
 		SetHandler "Decr", New CTPDecr
 		SetHandler "Execute", New CTPExecute
 		SetHandler "Flush", New CTPFlush
-		SetHandler "IIf", New CTPSubst
+		SetHandler "IIf", New CTPIIf
 		SetHandler "If", New CTPIfThen
 		SetHandler "IfTrue", New CTPIfTrue
 		SetHandler "IfFalse", New CTPIfFalse
