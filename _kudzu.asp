@@ -4,7 +4,7 @@
 ' Author	 : Andrew F. Friedl @ TriLogic Industries, LLC
 ' Created	 : 2006.05.09
 ' Revised	 : 2014.04.30
-' Version	 : 1.6.0
+' Version	 : 1.6.1
 ' Copyright: 2006-2014 TriLogic Industries, LLC
 ' License  : Full license is granted for personal or commercial use
 '          : as long as this header remains intact.
@@ -811,7 +811,7 @@ Class CTemplateEngine
 		mRxFld.Pattern = "\{\{[^}]+\}\}"
 		mDebug = False
 		mScrubTags = True
-		mVersion = "1.0.2a"
+		mVersion = "1.6.1"
 		Set mParent = Nothing
 		Set mHandlers = Server.CreateObject("Scripting.Dictionary")
 		Set mValues = Server.CreateObject("Scripting.Dictionary")
