@@ -2,9 +2,10 @@
 '----------------------------------------------------------------------
 ' Module	 : _kudzu.asp - Kudzu ASP Template Engine
 ' Author	 : Andrew F. Friedl @ TriLogic Industries, LLC
+' Contributor: Mumpitz, https://github.com/Mumpitz/KudzuASP
 ' Created	 : 2006.05.09
-' Revised	 : 2014.04.30
-' Version	 : 1.6.1
+' Revised	 : 2015.06.04
+' Version	 : 1.6.2
 ' Copyright: 2006-2014 TriLogic Industries, LLC
 ' License  : Full license is granted for personal or commercial use
 '          : as long as this header remains intact.
@@ -253,7 +254,7 @@ Class CTPIfThen
 		End If
 		If CBool(vNode.EvalParamString(vNode.ParamItem(1))) Then
 			EvalNode vNode, "then"
-		else
+		Else
 			EvalNode vNode, "else"
 		End If
 	End Sub
@@ -811,7 +812,7 @@ Class CTemplateEngine
 		mRxFld.Pattern = "\{\{[^}]+\}\}"
 		mDebug = False
 		mScrubTags = True
-		mVersion = "1.6.1"
+		mVersion = "1.6.2"
 		Set mParent = Nothing
 		Set mHandlers = Server.CreateObject("Scripting.Dictionary")
 		Set mValues = Server.CreateObject("Scripting.Dictionary")
@@ -1033,7 +1034,7 @@ Class CTemplateEngine
 		Case "$" ' user has TranslateKudzuValue() Method available
 			EvalParamString = TranslateKudzuVariable(Right(sParam,Len(sParam)-1))
 		Case "!" ' an explicit VBScript Eval()
-			EvalParamString = Eval(sParam)
+			EvalParamString = Eval(Right(sParam,Len(sParam)-1))
 		Case Else ' from the collection
 			EvalParamString = GetValue(sParam)
 		End Select
