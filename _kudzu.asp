@@ -14,6 +14,8 @@
 '          : pray for use who have recourse to thee.
 '----------------------------------------------------------------------
 
+Const KUDZU_INTERNAL_ERRORHANDLING = true
+
 '----------------------------------------------------------------------
 ' Kudzu Library Code
 '----------------------------------------------------------------------
@@ -193,7 +195,7 @@ Class CTPExecute
 			vNode.AppendTagError "empty url"
 			Exit Sub
 		End If
-		On Error Resume Next
+		If KUDZU_INTERNAL_ERRORHANDLING Then On Error Resume Next
 		vNode.Engine.ContentFlush
 		vNode.StackPush
 		Server.Execute sExpr
@@ -279,7 +281,7 @@ Class CTPReplace
 		End If
 		If vNode.ParamItem(1) = "" Then Exit Sub
 		vNode.StackPush
-		On Error Resume Next
+		If KUDZU_INTERNAL_ERRORHANDLING Then On Error Resume Next
 		vNode.Engine.ContentAppend vNode.EvalParamString(vNode.ParamItem(1))
 		vNode.StackPop
 	End Sub
@@ -537,7 +539,7 @@ Class CTemplateNode
 			EvalNodes
 			mEngine.ContentAppend mStopTag
 		Else
-			On Error Resume Next
+			If KUDZU_INTERNAL_ERRORHANDLING Then On Error Resume Next
 			EvalProcString
 			If Err.Number <> 0 Then
 				mEngine.ContentAppend Err.Description
@@ -658,7 +660,7 @@ Class CTemplateCompiler
 	Function ParseFile(sFileName)
 		Dim inp, tso, fso
 		Set fso = Server.CreateObject("Scripting.FileSystemObject")
-		On Error Resume next
+		If KUDZU_INTERNAL_ERRORHANDLING Then On Error Resume next
 		Set tso = fso.OpenTextFile(sFileName, 1, False)
 		If Err.Number <> 0 Then
 			Response.Write Err.Description & "<BR />"
@@ -1045,7 +1047,7 @@ Class CTemplateEngine
 		Result = "": LastOffset = 1
 		Set M = GetFieldTags(sValue)
 		If M.Count > 0 Then
-			On Error Resume Next
+			If KUDZU_INTERNAL_ERRORHANDLING Then On Error Resume Next
 			For Idx = 0 to M.Count - 1
 				If M(Idx).FirstIndex - LastOffset >= 0 Then
 					Result = Result & Mid(sValue, LastOffset, (M(Idx).FirstIndex - LastOffset) + 1)
