@@ -1,17 +1,18 @@
 <%
 '----------------------------------------------------------------------
-' Module	 : _kudzu.asp - Kudzu ASP Template Engine
-' Author	 : Andrew F. Friedl @ TriLogic Industries, LLC
-' Contributor: Mumpitz, https://github.com/Mumpitz/KudzuASP
-' Created	 : 2006.05.09
-' Revised	 : 2015.06.04
-' Version	 : 1.6.2
-' Copyright: 2006-2014 TriLogic Industries, LLC
-' License  : Full license is granted for personal or commercial use
-'          : as long as this header remains intact.
-'----------:-----------------------------------------------------------
-'          : Oh Mary conceived without sin,
-'          : pray for use who have recourse to thee.
+' Module      : _kudzu.asp - Kudzu ASP Template Engine
+' Author      : Andrew F. Friedl @ TriLogic Industries, LLC
+' Contributor : Mumpitz, https://github.com/Mumpitz/KudzuASP
+' Created     : 2006.05.09
+' Revised     : 2020.03.09
+' Version     : 1.6.3
+' Copyright   : 2006-2014 TriLogic Industries, LLC
+'             : 2015-2020 QNC GmbH
+' License     : Full license is granted for personal or commercial use
+'             : as long as this header remains intact.
+'-------------:-----------------------------------------------------------
+'             : Oh Mary conceived without sin,
+'             : pray for use who have recourse to thee.
 '----------------------------------------------------------------------
 
 '----------------------------------------------------------------------
@@ -20,11 +21,11 @@
 Dim KudzuLib: Set KudzuLib = New CKudzuLib
 
 Function KudzuReadLib(PluginFileName)
-  Dim fso, txt
-  Set fso = Server.CreateObject("Scripting.FileSystemObject")
-  Set txt = fso.OpenTextFile(PluginFileName)
-  KudzuReadLib = txt.ReadAll
-  txt.Close: Set txt=Nothing: Set fso=Nothing
+	Dim fso, txt
+	Set fso = Server.CreateObject("Scripting.FileSystemObject")
+	Set txt = fso.OpenTextFile(PluginFileName)
+	KudzuReadLib = txt.ReadAll
+	txt.Close: Set txt=Nothing: Set fso=Nothing
 End Function
 
 Sub KudzuLoadLib(PluginFile)
@@ -61,7 +62,7 @@ Class CKudzuLibItem
 			Set getTag = Nothing
 		End If
 	End Sub
-	Sub libInit(sPath,sName)		
+	Sub libInit(sPath,sName)
 		libName = UCASE(sName)
 		libFile = sPath & "KudzuLib_" & libName & ".asp"
 		libFunc = "KudzuLibImport_" & libName
@@ -148,291 +149,361 @@ End Class
 '----------------------------------------------------------------------
 ' Tag Handlers
 '----------------------------------------------------------------------
-Class CTPFlush
-	Sub HandleTag(vNode)
-		vNode.Engine.ContentFlush
-	End Sub
-End Class
-Class CTPImport
-	Sub HandleTag(vNode)
-		If vNode.ParamCount < 1 Then
-			vNode.AppendTagError "libName[|libName2]*"
-			Exit Sub
-		End If
-		Dim idx
-		For idx=1 To vNode.ParamCount
-			vNode.Engine.libImport vNode.ParamItem(idx)
-		Next
-	End Sub
-End Class
-Class CTPProfiler
-	Sub HandleTag(vNode)
-		Dim timeSpan
-		vNode.Engine.StopTime = Timer()
-		timeSpan = vNode.Engine.StopTime - vNode.Engine.StartTime
-		vNode.Engine.PutValue "PageTime", FormatNumber(timeSpan,4)
-		vNode.StackPush
-		vNode.EvalNodes
-		vNode.Engine.ContentReplaceFields
-		vNode.StackPop
-	End Sub
-End Class
-Class CTPExecute
-	Sub HandleTag(vNode)
-		Dim sExpr
-		If vNode.ParamCount < 1 Then
-			vNode.AppendTagError "expr"
-			Exit Sub
-		End If
-		sExpr = vNode.ParamItem(1)
-		If Left(sExpr, 1) = "?" Then
-			sExpr = Right(sExpr, Len(sExpr) - 1)
-			sExpr = vNode.EvalParamString(sExpr)
-		End If
-		If sExpr = "" Then
-			vNode.AppendTagError "empty url"
-			Exit Sub
-		End If
-		On Error Resume Next
-		vNode.Engine.ContentFlush
-		vNode.StackPush
-		Server.Execute sExpr
-		If Err.Number <> 0 Then
-			vNode.AppendTagError Err.Description
-		End If
-		vNode.StackPop
-	End Sub
-End Class
-Class CTPIIf
-	Sub HandleTag(vNode)
-		If vNode.ParamCount < 3 Then
-			vNode.AppendTagError "value_id|true_id|false_id"
-			Exit Sub
-		End If
-		vNode.StackPush
-		If CBool(vNode.EvalParamString(vNode.ParamItem(1))) Then
-			vNode.Engine.ContentAppend vNode.EvalParamString(vNode.ParamItem(2))
-		Else
-			vNode.Engine.ContentAppend vNode.EvalParamString(vNode.ParamItem(3))
-		End If
-		vNode.StackPop
-	End Sub
-End Class
-Class CTPIfTrue
-	Sub HandleTag(vNode)
-		If vNode.ParamCount < 1 Then
-			vNode.AppendTagError "value_id"
-			Exit Sub
-		End If
-		If Not CBool(vNode.EvalParamString(vNode.ParamItem(1))) Then
-			Exit Sub
-		End If
-		vNode.StackPush
-		vNode.EvalNodes
-		vNode.StackPop
-	End Sub
-End Class
-Class CTPIfFalse
-	Sub HandleTag(vNode)
-		If vNode.ParamCount < 1 Then
-			vNode.AppendTagError "value_id"
-			Exit Sub
-		End If
-		If CBool(vNode.EvalParamString(vNode.ParamItem(1))) Then
-			Exit Sub
-		End If
-		vNode.StackPush
-		vNode.EvalNodes
-		vNode.StackPop
-	End Sub
-End Class
-Class CTPIfThen
-	Sub HandleTag(vNode)
-		If vNode.ParamCount < 1 Then
-			vNode.AppendTagError "value_id"
-			Exit Sub
-		End If
-		If CBool(vNode.EvalParamString(vNode.ParamItem(1))) Then
-			EvalNode vNode, "then"
-		Else
-			EvalNode vNode, "else"
-		End If
-	End Sub
-	Sub EvalNode(vNode, sNode)
-		Dim mNode
-		Set mNode = vNode.LocateNode(sNode)
-		If mNode Is Nothing Then Exit Sub
-		mNode.StackPush
-		mNode.EvalNodes
-		mNode.StackPop
-	End Sub
-End Class
-Class CTPIgnore
-	Sub HandleTag(vNode)
-	End Sub
-End Class
-Class CTPReplace
-	Sub HandleTag(vNode)
-		If vNode.ParamCount < 1 Then
-			vNode.AppendTagError "value_id"
-			Exit Sub
-		End If
-		If vNode.ParamItem(1) = "" Then Exit Sub
-		vNode.StackPush
-		On Error Resume Next
-		vNode.Engine.ContentAppend vNode.EvalParamString(vNode.ParamItem(1))
-		vNode.StackPop
-	End Sub
-End Class
-Class CTPSubst
-	Sub HandleTag(vNode)
-		vNode.StackPush
-		vNode.StackPush
-		vNode.EvalNodes
-		vNode.StackPop
-		vNode.Engine.ContentReplaceFields
-		vNode.StackPop
-	End Sub
-End Class
-Class CTPCase
-	Sub HandleTag(vNode)
-		If vNode.ParamCount < 1 Then
-			vNode.AppendTagError "value_id"
-			Exit Sub
-		End If
-		Dim NodeName
-		NodeName = vNode.EvalParamString(vNode.ParamItem(1))
-		EvalCase vNode, NodeName
-	End Sub
-	Sub EvalCase(vNode, sNode)
-		Dim mNode
-		Set mNode = vNode.LocateNode(sNode)
-		If mNode Is Nothing Then
-			Set mNode = vNode.LocateNode("else")
-		End If
-		If mNode Is Nothing Then Exit Sub
-		mNode.StackPush
-		mNode.EvalNodes
-		mNode.StackPop
-	End Sub
-End Class
-Class CTPDecr
-	Public Sub HandleTag(vNode)
-		Dim ValName, CurValue
-		If vNode.ParamCount < 1 Then
-			vNode.AppendError "value_id"
-		End If
-		ValName = vNode.ParamItem(1)
-		If vNode.Engine.HasValue(ValName) Then
-			CurValue = vNode.Engine.GetValue(ValName)
-			CurValue = CLng(CurValue) - 1
-		Else
-			If vNode.ParamCount > 1 Then
-				CurValue = CLng(vNode.ParamItem(2))
-			Else
-				CurValue = 0
+' Engine
+	Class CTPFlush
+		' @desc:    flushes the Engine Content
+		' @param:	none
+
+		Sub HandleTag(vNode)
+			vNode.Engine.ContentFlush
+		End Sub
+	End Class
+	Class CTPImport
+		' @desc:    imports Librarys to the Engine
+		' @param:	String, libName
+		'           [String, libname]...
+
+		Sub HandleTag(vNode)
+			If vNode.ParamCount < 1 Then
+				vNode.AppendTagError "libName[|libName2]*"
+				Exit Sub
 			End If
-		End If
-		vNode.Engine.PutValue ValName, CurValue
-	End Sub
-End Class
-Class CTPIncr
-	Public Sub HandleTag(vNode)
-		Dim ValName, CurValue
-		If vNode.ParamCount < 1 Then
-			vNode.AppendError "value_id"
-		End If
-		ValName = vNode.ParamItem(1)
-		If vNode.Engine.HasValue(ValName) Then
-			CurValue = vNode.Engine.GetValue(ValName)
-			CurValue = CLng(CurValue) + 1
-		Else
-			If vNode.ParamCount > 1 Then
-				CurValue = CLng(vNode.ParamItem(2))
-			Else
-				CurValue = 0
-			End If
-		End If
-		vNode.Engine.PutValue ValName, CurValue
-	End Sub
-End Class
-Class CTPSetValue
-	Public Sub HandleTag(vNode)
-		Dim ValName, CurValue, Idx, Jdx
-		If vNode.ParamCount < 1 Then
-			vNode.AppendError "value_id??values&&|..."
-		End If
-		For Idx = 1 To vNode.ParamCount
-			ValName = vNode.ParamItem(Idx)
-			CurValue = Split(ValName, "??")
-			' name of the value to be set
-			ValName = CurValue(0)
-			If UBound(CurValue) > 0 Then
-				CurValue = CurValue(1)
-				CurValue = Split(CurValue, "&&")
-				If UBound(CurValue) < 1 Then
-					CurValue = CurValue(0)
-					CurValue = vNode.Engine.ReplaceFields(CStr(CurValue))
-				Else
-					ReDim Preserve CurValue(UBound(CurValue) + 1)
-					For Jdx = UBound(CurValue) To 1 Step -1
-						CurValue(Jdx) = CurValue(Jdx - 1)
-						If Left(CurValue(Jdx), 1) = "$" Then
-							CurValue(Jdx) = vNode.Engine.ReplaceFields(CStr(CurValue(Jdx)))
-						End If
-					Next
-					CurValue(0) = ""
-				End If
-			Else
-				CurValue = ""
-			End If
-			
-			If Left(ValName, 1) = "$" Then
-				ValName = vNode.Engine.ReplaceFields(ValName)
-			End If
-			
-			' put the most recent value
-			vNode.Engine.PutValue ValName, CurValue
-		Next
-	End Sub
-End Class
-Class CTPUnSetValue
-	Public Sub HandleTag(vNode)
-		Dim ValName, CurValue, Idx, Jdx
-		If vNode.ParamCount < 1 Then
-			vNode.AppendError "value_id|..."
-		End If
-		For Idx = 1 To vNode.ParamCount
-			ValName = vNode.ParamItem(Idx)
-			vNode.Engine.UnPutValue ValName
-		Next
-	End Sub
-End Class
-Class CTPCycle
-	Public Sub HandleTag(vNode)
-		Dim ValName, CurValue, Idx, Jdx
-		If vNode.ParamCount < 3 Then
-			vNode.AppendError "value_id|Alt1|Alt2..."
-		End If
-		ValName = vNode.ParamItem(1)
-		CurValue = vNode.ParamItem(2)
-		If vNode.Engine.HasValue(ValName) Then
-			CurValue = vNode.Engine.GetValue(ValName)
-			Jdx = 2
-			For Idx = 2 To vNode.ParamCount
-				If vNode.ParamItem(Idx) = CurValue Then
-					Jdx = Idx
-				End If
+			Dim idx
+			For idx=1 To vNode.ParamCount
+				vNode.Engine.libImport vNode.ParamItem(idx)
 			Next
-			If Jdx >= vNode.ParamCount Then
-				CurValue = vNode.ParamItem(2)
-			Else
-				CurValue = vNode.ParamItem(Jdx + 1)
+		End Sub
+	End Class
+	Class CTPExecute
+		' @desc:    executes another asp file
+		' @param:	String, url to asp file
+
+		Sub HandleTag(vNode)
+			Dim sExpr
+			If vNode.ParamCount < 1 Then
+				vNode.AppendTagError "expr"
+				Exit Sub
 			End If
-		End If
-		vNode.Engine.PutValue ValName, CurValue
-	End Sub
-End Class
+			sExpr = vNode.ParamItem(1)
+			If Left(sExpr, 1) = "?" Then
+				sExpr = Right(sExpr, Len(sExpr) - 1)
+				sExpr = vNode.EvalParamString(sExpr)
+			End If
+			If sExpr = "" Then
+				vNode.AppendTagError "empty url"
+				Exit Sub
+			End If
+			If KUDZU_INTERNAL_ERRORHANDLING Then On Error Resume Next
+			vNode.Engine.ContentFlush
+			vNode.StackPush
+			Server.Execute sExpr
+			If Err.Number <> 0 Then
+				vNode.AppendTagError Err.Description
+			End If
+			vNode.StackPop
+		End Sub
+	End Class
+	Class CTPIgnore
+		' @desc:    the node content will be ignored from the output
+		' @param:	none
+
+		Sub HandleTag(vNode)
+		End Sub
+	End Class
+	Class CTPReplace
+		' @desc:    replaces it self with the evaluation of its parameter
+		' @param:	expression to evaluate
+
+		Sub HandleTag(vNode)
+			If vNode.ParamCount < 1 Then
+				vNode.AppendTagError "value_id"
+				Exit Sub
+			End If
+			If vNode.ParamItem(1) = "" Then Exit Sub
+			vNode.StackPush
+			If KUDZU_INTERNAL_ERRORHANDLING Then On Error Resume Next
+			vNode.Engine.ContentAppend vNode.EvalParamString(vNode.ParamItem(1))
+			vNode.StackPop
+		End Sub
+	End Class
+	Class CTPSubst
+		' @desc:    substitutes markers and nodes inside
+		' @param:	none
+
+		Sub HandleTag(vNode)
+			vNode.StackPush
+			vNode.StackPush
+			vNode.EvalNodes
+			vNode.StackPop
+			vNode.Engine.ContentReplaceFields
+			vNode.StackPop
+		End Sub
+	End Class
+
+' Conditions
+	Class CTPIIf
+		' @desc:    inline If,
+
+		Sub HandleTag(vNode)
+			If vNode.ParamCount < 3 Then
+				vNode.AppendTagError "value_id|true_id|false_id"
+				Exit Sub
+			End If
+			vNode.StackPush
+			If CBool(vNode.EvalParamString(vNode.ParamItem(1))) Then
+				vNode.Engine.ContentAppend vNode.EvalParamString(vNode.ParamItem(2))
+			Else
+				vNode.Engine.ContentAppend vNode.EvalParamString(vNode.ParamItem(3))
+			End If
+			vNode.StackPop
+		End Sub
+	End Class
+	Class CTPIfTrue
+		Sub HandleTag(vNode)
+			If vNode.ParamCount < 1 Then
+				vNode.AppendTagError "value_id"
+				Exit Sub
+			End If
+			If Not CBool(vNode.EvalParamString(vNode.ParamItem(1))) Then
+				Exit Sub
+			End If
+			vNode.StackPush
+			vNode.EvalNodes
+			vNode.StackPop
+		End Sub
+	End Class
+	Class CTPIfFalse
+		Sub HandleTag(vNode)
+			If vNode.ParamCount < 1 Then
+				vNode.AppendTagError "value_id"
+				Exit Sub
+			End If
+			If CBool(vNode.EvalParamString(vNode.ParamItem(1))) Then
+				Exit Sub
+			End If
+			vNode.StackPush
+			vNode.EvalNodes
+			vNode.StackPop
+		End Sub
+	End Class
+	Class CTPIfThen
+		' @desc:    regular if... then... else... construct
+		'        	then and else have to be subnodes of the if node
+		' @param:	Expression
+
+		Sub HandleTag(vNode)
+			If vNode.ParamCount < 1 Then
+				vNode.AppendTagError "value_id"
+				Exit Sub
+			End If
+			If CBool(vNode.EvalParamString(vNode.ParamItem(1))) Then
+				EvalNode vNode, "then"
+			Else
+				EvalNode vNode, "else"
+			End If
+		End Sub
+		Sub EvalNode(vNode, sNode)
+			Dim mNode
+			Set mNode = vNode.LocateNode(sNode)
+			If mNode Is Nothing Then Exit Sub
+			mNode.StackPush
+			mNode.EvalNodes
+			mNode.StackPop
+		End Sub
+	End Class
+	Class CTPCase
+		' @desc:    a case switch, depending on the value of param
+		'        	the corresponding node is evaluated
+		' @param:	String
+
+		Sub HandleTag(vNode)
+			If vNode.ParamCount < 1 Then
+				vNode.AppendTagError "value_id"
+				Exit Sub
+			End If
+			Dim NodeName
+			NodeName = vNode.EvalParamString(vNode.ParamItem(1))
+			EvalCase vNode, NodeName
+		End Sub
+		Sub EvalCase(vNode, sNode)
+			Dim mNode
+			Set mNode = vNode.LocateNode(sNode)
+			If mNode Is Nothing Then
+				Set mNode = vNode.LocateNode("else")
+			End If
+			If mNode Is Nothing Then Exit Sub
+			mNode.StackPush
+			mNode.EvalNodes
+			mNode.StackPop
+		End Sub
+	End Class
+
+' Manipulation
+	Class CTPDecr
+		' @desc: 	decrements a Value of the Engine or sets it either
+		'        	with 0 or the specified Value
+		' @param:	Number,   Value to decrement
+		'        	[Number], Value to set if the first parameter
+		'        	          does not exist in Values
+
+		Public Sub HandleTag(vNode)
+			Dim ValName, CurValue
+			If vNode.ParamCount < 1 Then
+				vNode.AppendError "value_id"
+			End If
+			ValName = vNode.ParamItem(1)
+			If vNode.Engine.HasValue(ValName) Then
+				CurValue = vNode.Engine.GetValue(ValName)
+				CurValue = CLng(CurValue) - 1
+			Else
+				If vNode.ParamCount > 1 Then
+					CurValue = CLng(vNode.ParamItem(2))
+				Else
+					CurValue = 0
+				End If
+			End If
+			vNode.Engine.PutValue ValName, CurValue
+		End Sub
+	End Class
+	Class CTPIncr
+		' @desc: 	increments a Value of the Engine or sets it either
+		'        	with 0 or the specified Value
+		' @param:	Number,   Value to increment
+		'        	[Number], Value to set if the first parameter
+		'        	          does not exist in Values
+
+		Public Sub HandleTag(vNode)
+			Dim ValName, CurValue
+			If vNode.ParamCount < 1 Then
+				vNode.AppendError "value_id"
+			End If
+			ValName = vNode.ParamItem(1)
+			If vNode.Engine.HasValue(ValName) Then
+				CurValue = vNode.Engine.GetValue(ValName)
+				CurValue = CLng(CurValue) + 1
+			Else
+				If vNode.ParamCount > 1 Then
+					CurValue = CLng(vNode.ParamItem(2))
+				Else
+					CurValue = 0
+				End If
+			End If
+			vNode.Engine.PutValue ValName, CurValue
+		End Sub
+	End Class
+	Class CTPSetValue
+		' @desc: 	puts Values to the Engine.
+		'        	Double Questionmark is the assignment Operator
+		'        	Double Ampersand separates Array values
+		' @param:	Key/Value Expression
+		'        	[Key/Value Expression]...
+		' @example:	<!--[SetValue|key1??value1|key2??value2|arrKey??arrVal1&&arrVal2]-->
+
+		Public Sub HandleTag(vNode)
+			Dim ValName, CurValue, Idx, Jdx
+			If vNode.ParamCount < 1 Then
+				vNode.AppendError "value_id??values&&|..."
+			End If
+			For Idx = 1 To vNode.ParamCount
+				ValName = vNode.ParamItem(Idx)
+				CurValue = Split(ValName, "??")
+				' name of the value to be set
+				ValName = CurValue(0)
+				If UBound(CurValue) > 0 Then
+					CurValue = CurValue(1)
+					CurValue = Split(CurValue, "&&")
+					If UBound(CurValue) < 1 Then
+						CurValue = CurValue(0)
+						CurValue = vNode.Engine.ReplaceFields(CStr(CurValue))
+					Else
+						ReDim Preserve CurValue(UBound(CurValue) + 1)
+						For Jdx = UBound(CurValue) To 1 Step -1
+							CurValue(Jdx) = CurValue(Jdx - 1)
+							If Left(CurValue(Jdx), 1) = "$" Then
+								CurValue(Jdx) = vNode.Engine.ReplaceFields(CStr(CurValue(Jdx)))
+							End If
+						Next
+						CurValue(0) = ""
+					End If
+				Else
+					CurValue = ""
+				End If
+				
+				If Left(ValName, 1) = "$" Then
+					ValName = vNode.Engine.ReplaceFields(ValName)
+				End If
+				
+				' put the most recent value
+				vNode.Engine.PutValue ValName, CurValue
+			Next
+		End Sub
+	End Class
+	Class CTPUnSetValue
+		' @desc:    unsets Values from the Engine
+		' @param:	String
+		'        	[String]...
+
+		Public Sub HandleTag(vNode)
+			Dim ValName, CurValue, Idx, Jdx
+			If vNode.ParamCount < 1 Then
+				vNode.AppendError "value_id|..."
+			End If
+			For Idx = 1 To vNode.ParamCount
+				ValName = vNode.ParamItem(Idx)
+				vNode.Engine.UnPutValue ValName
+			Next
+		End Sub
+	End Class
+
+' currently unknown
+	Class CTPProfiler
+		' @desc:    unknown use, sets 'PageTime' Value and substitutes
+		'           Nodes
+		' @param:	none
+
+		Sub HandleTag(vNode)
+			Dim timeSpan
+			vNode.Engine.StopTime = Timer()
+			timeSpan = vNode.Engine.StopTime - vNode.Engine.StartTime
+			vNode.Engine.PutValue "PageTime", FormatNumber(timeSpan,4)
+			vNode.StackPush
+			vNode.EvalNodes
+			vNode.Engine.ContentReplaceFields
+			vNode.StackPop
+		End Sub
+	End Class
+	Class CTPCycle
+		' @desc:    unknown use, iterates something when the Value
+		'        	exists else creates it with the value of the
+		'        	second parameter 
+		' @param:	String
+		'        	Var
+		'        	Var
+		'        	[Var]...
+		Public Sub HandleTag(vNode)
+			Dim ValName, CurValue, Idx, Jdx
+			If vNode.ParamCount < 3 Then
+				vNode.AppendError "value_id|Alt1|Alt2..."
+			End If
+			ValName = vNode.ParamItem(1)
+			CurValue = vNode.ParamItem(2)
+			If vNode.Engine.HasValue(ValName) Then
+				CurValue = vNode.Engine.GetValue(ValName)
+				Jdx = 2
+				For Idx = 2 To vNode.ParamCount
+					If vNode.ParamItem(Idx) = CurValue Then
+						Jdx = Idx
+					End If
+				Next
+				If Jdx >= vNode.ParamCount Then
+					CurValue = vNode.ParamItem(2)
+				Else
+					CurValue = vNode.ParamItem(Jdx + 1)
+				End If
+			End If
+			vNode.Engine.PutValue ValName, CurValue
+		End Sub
+	End Class
 
 '----------------------------------------------------------------------
 ' Class Template Node
@@ -441,11 +512,16 @@ Class CTemplateNode
 	Dim iid
 	Dim mStartTag, mStopTag, mContent, mEvalProc
 	Dim mEngine, mNodes, mParams
+
 	Sub Class_Initialize()
 		mStartTag="": mStopTag="": mContent="": mEvalProc=""
 		mNodes = Array(""): mParams = Array("")
 		Set mEngine = Nothing
 	End Sub
+
+	'----------------------------------------
+	' Getters, Letters and Setters
+	'----------------------------------------
 	Property Get Engine()
 		Set Engine = mEngine
 	End Property
@@ -456,36 +532,42 @@ Class CTemplateNode
 			Set mNodes(Idx).Engine = mEngine
 		Next
 	End Property
+
 	Property Get ID()
 		ID = iid
 	End Property
 	Property Let ID(Value)
 		iid = LCase(Value)
 	End Property
+
 	Property Get StartTag()
 		StartTag = mStartTag
 	End Property
 	Property Let StartTag(Value)
 		mStartTag = LCase(Value)
 	End Property
+
 	Property Get StopTag()
 		StopTag = mStopTag
 	End Property
 	Property Let StopTag(Value)
 		mStopTag = LCase(Value)
 	End Property
+
 	Property Get Content()
 		Content = mContent
 	End Property
 	Property Let Content(Value)
 		mContent = Value
 	End Property
+
 	Property Get EvalProc()
 		EvalProc = mEvalProc
 	End Property
 	Property Let EvalProc(Value)
 		mEvalProc = Value
 	End Property
+
 	Public Property Get NodeItem(Index)
 		Set NodeItem = mNodes(Index)
 	End Property
@@ -496,6 +578,7 @@ Class CTemplateNode
 		ReDim Preserve mNodes(UBound(mNodes) + 1)
 		Set mNodes(UBound(mNodes)) = vNode
 	End Sub
+
 	Public Property Get ParamCount()
 		ParamCount = Ubound(mParams)
 	End Property
@@ -506,6 +589,7 @@ Class CTemplateNode
 		Redim Preserve mParams(Ubound(mParams)+1)
 		mParams(Ubound(mParams)) = sValue
 	End Sub
+
 	Sub EvalProcString()
 		On Error Goto 0
 		If mEvalProc <> "" Then
@@ -614,31 +698,37 @@ Class CTemplateCompiler
 		mScrubTags = True
 		Set mParent = Nothing
 	End Sub
-
-	Property Get Debug()
-		Debug = mDebug
-	End Property
-	Property Let Debug(Value)
-		mDebug = Value
-	End Property
-	Property Get ScrubTags()
-		ScrubTags = mScrubTags
-	End Property
-	Property Let ScrubTags(Value)
-		mScrubTags = Value
-	End Property
-	Property Get Parent
-		Set Parent = mParent
-	End Property
-	Property Set Parent(node)
-		Set mParent = node
-	End Property
 	Sub InitParseStack()
 		mParseStack = Array(New CTemplateNode)
 		Set mParseStack(0).Engine = Me
 		mParseStack(0).ID="_root"
 		mParseLevel = 0
 	End Sub
+
+	'----------------------------------------
+	' Getters, Letters and Setters
+	'----------------------------------------
+	Property Get Debug()
+		Debug = mDebug
+	End Property
+	Property Let Debug(Value)
+		mDebug = Value
+	End Property
+
+	Property Get ScrubTags()
+		ScrubTags = mScrubTags
+	End Property
+	Property Let ScrubTags(Value)
+		mScrubTags = Value
+	End Property
+
+	Property Get Parent
+		Set Parent = mParent
+	End Property
+	Property Set Parent(node)
+		Set mParent = node
+	End Property
+
 	Sub ParsePush(Value)
 		mParseLevel = mParseLevel + 1
 		ReDim Preserve mParseStack(mParseLevel)
@@ -802,6 +892,8 @@ Class CTemplateEngine
 	Dim mHandlers, mValues, mIterators
 	Dim mTimeStart, mTimeEnd
 	Dim mParent, mFactory
+	Dim mPathPrefix
+
 	Sub Class_Initialize()
 		mTimeStart = Timer()
 		mTimeEnd = mTimeStart
@@ -817,6 +909,7 @@ Class CTemplateEngine
 		Set mHandlers = Server.CreateObject("Scripting.Dictionary")
 		Set mValues = Server.CreateObject("Scripting.Dictionary")
 		Set mIterators = Server.CreateObject("Scripting.Dictionary")
+		mPathPrefix = ""
 		InstallHandlers
 		PutValue "Kudzu_Version", mVersion
 		ClassReset
@@ -840,30 +933,6 @@ Class CTemplateEngine
 		SetHandler "Subst", New CTPSubst
 		SetHandler "UnSetValue", New CTPUnSetValue
 	End Sub
-	Property Let StartTime(Value)
-		mTimeStart = Value
-	End Property
-	Property Get StartTime()
-		StartTime = mTimeStart
-	End Property
-	Property Let StopTime(Value)
-		mTimeEnd = Value
-	End Property
-	Property Get StopTime()
-		StopTime = mTimeEnd
-	End Property
-	Property Let Debug(Value)
-		mDebug = Value
-	End Property
-	Property Get Debug()
-		Debug = mDebug
-	End Property
-	Property Get ScrubTags()
-		ScrubTags = mScrubTags
-	End Property
-	Property Let ScrubTags(Value)
-		mScrubTags = Value
-	End Property
 	Sub ClassReset()
 		Set mNodeTree = New CTemplateNode
 		Set mNodeTree.Engine = Me
@@ -871,6 +940,38 @@ Class CTemplateEngine
 		mRunStack = Array("")
 		mRunLevel = 0
 	End Sub
+
+	'----------------------------------------
+	' Getters, Letters and Setters
+	'----------------------------------------
+	Property Let StartTime(Value)
+		mTimeStart = Value
+	End Property
+	Property Get StartTime()
+		StartTime = mTimeStart
+	End Property
+
+	Property Let StopTime(Value)
+		mTimeEnd = Value
+	End Property
+	Property Get StopTime()
+		StopTime = mTimeEnd
+	End Property
+
+	Property Let Debug(Value)
+		mDebug = Value
+	End Property
+	Property Get Debug()
+		Debug = mDebug
+	End Property
+
+	Property Get ScrubTags()
+		ScrubTags = mScrubTags
+	End Property
+	Property Let ScrubTags(Value)
+		mScrubTags = Value
+	End Property
+
 	Property Get Parent
 		Set Parent = mParent
 	End Property
@@ -884,6 +985,56 @@ Class CTemplateEngine
 	Property Set Factory(oFactory)
 		Set mFactory = oFactory
 	End Property
+
+	Property Get PathPrefix()
+		PathPrefix = mPathPrefix
+	End Property
+	Property Let PathPrefix(sPathPrefix)
+		mPathPrefix = sPathPrefix
+	End Property
+
+	'----------------------------------------
+	' Dictionaries
+	'----------------------------------------
+	Property Get Handlers()
+		Set Handlers = mHandlers
+	End Property
+	Function HasHandler(sName)
+		HasHandler = mHandlers.Exists(LCase(sName))
+	End Function
+	Function GetHandler(sName)
+		Set GetHandler = mHandlers(LCase(sName))
+	End Function
+	Sub SetHandler(sName, oHandler)
+		Dim sKey: sKey = LCase(sName)
+		If mHandlers.Exists(sKey) Then
+			mHandlers.Remove(sKey)
+		End If
+		If Not oHandler Is Nothing Then
+			mHandlers.Add sKey, oHandler
+		End If
+	End Sub
+
+	Property Get Values()
+		Set Values = mValues
+	End Property
+	Property Get HasValue(sName)
+		HasValue = mValues.Exists(LCase(sName))
+	End Property
+	Function GetValue(sName)
+		GetValue = mValues(LCase(sName))
+	End Function
+	Function GetObjectValue(sName)
+		Set GetObjectValue = mValues(LCase(sName))
+	End Function
+	Sub PutValue(sName, vValue)
+		Dim sKey: sKey = LCase(sName)
+		If mValues.Exists(sKey) Then
+			mValues.Remove sKey
+		End If
+		mValues.Add sKey, vValue
+	End Sub
+
 	Property Get Iterators()
 		Set Iterators = mIterators
 	End Property
@@ -900,43 +1051,10 @@ Class CTemplateEngine
 		End If
 		mIterators.Add sKey, oIter
 	End Sub
-	Property Get Handlers()
-		Set Handlers = mHandlers
-	End Property
-	Function GetHandler(sName)
-		Set GetHandler = mHandlers(LCase(sName))
-	End Function
-	Sub SetHandler(sName, oHandler)
-		Dim sKey: sKey = LCase(sName)
-		If mHandlers.Exists(sKey) Then
-			mHandlers.Remove(sKey)
-		End If
-		If Not oHandler Is Nothing Then
-			mHandlers.Add sKey, oHandler
-		End If
-	End Sub
-	Function HasHandler(sName)
-		HasHandler = mHandlers.Exists(LCase(sName))
-	End Function
-	Property Get Values()
-		Set Values = mValues
-	End Property
-	Function GetValue(sName)
-		GetValue = mValues(LCase(sName))
-	End Function
-	Function GetObjectValue(sName)
-		Set GetObjectValue = mValues(LCase(sName))
-	End Function
-	Property Get HasValue(sName)
-		HasValue = mValues.Exists(LCase(sName))
-	End Property
-	Sub PutValue(sName, vValue)
-		Dim sKey: sKey = LCase(sName)
-		If mValues.Exists(sKey) Then
-			mValues.Remove sKey
-		End If
-		mValues.Add sKey, vValue
-	End Sub
+
+	'----------------------------------------
+	' 
+	'----------------------------------------
 	Sub ParseFile(sFileName)
 		Dim T_COMPILER
 		mTimeStart = Timer()
@@ -945,7 +1063,7 @@ Class CTemplateEngine
 		T_COMPILER.ScrubTags = mScrubTags
 		Set T_COMPILER.Parent = mParent
 		Me.ClassReset
-		Set mNodeTree = T_COMPILER.ParseFile(sFileName)
+		Set mNodeTree = T_COMPILER.ParseFile(mPathPrefix & sFileName)
 		If mDebug Then Exit Sub
 		Set mNodeTree.Engine = Me
 	End Sub
@@ -978,6 +1096,7 @@ Class CTemplateEngine
 			ME.Parent.ENGINE.ContentAppend sContent
 		End IF
 	End Sub
+
 	Function ContentLevel()
 		ContentLevel = mRunLevel
 	End Function
@@ -1062,6 +1181,10 @@ Class CTemplateEngine
 		End If
 		ReplaceFields = Result
 	End Function
+
+	'----------------------------------------
+	' Library Methods
+	'----------------------------------------
 	Function libImport(libName)
 		KudzuLIB.libImport libName
 		libImport = KudzuLIB.libSetTags(libName,Me)
