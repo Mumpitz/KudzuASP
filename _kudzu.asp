@@ -903,7 +903,7 @@ Class CTemplateEngine
 		mRxFld.Pattern = "\{\{[^}]+\}\}"
 		mDebug = False
 		mScrubTags = True
-		mVersion = "1.6.2"
+		mVersion = "1.6.3"
 		Set mParent = Nothing
 		Set mHandlers = Server.CreateObject("Scripting.Dictionary")
 		Set mValues = Server.CreateObject("Scripting.Dictionary")
