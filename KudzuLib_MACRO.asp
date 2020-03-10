@@ -10,7 +10,7 @@
 '           : as long as this header remains intact.
 '-----------:----------------------------------------------------------
 '           : Oh Mary conceived without sin,
-'           : pray for use who have recourse to thee.
+'           : pray for us who have recourse to thee.
 '----------------------------------------------------------------------
 
 '----------------------------------------------------------------------
