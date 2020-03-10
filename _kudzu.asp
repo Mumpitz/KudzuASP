@@ -473,9 +473,8 @@ End Class
 		End Sub
 	End Class
 	Class CTPCycle
-		' @desc:    unknown use, iterates something when the Value
-		'        	exists else creates it with the value of the
-		'        	second parameter 
+		' @desc:    cycles the variable specified in parameter 1
+		'        	using the values specified in parameters 2-n
 		' @param:	String
 		'        	Var
 		'        	Var
